@@ -1,5 +1,12 @@
 """ Bibliotecas """
+from pathlib import Path
 from random import randint, choice, shuffle
+
+""" Rutas de archivos """
+
+RUTA_BASE = Path(__file__).resolve().parent
+Archivo_Preguntas = RUTA_BASE / 'preguntas_respuestas.txt'
+Archivo_Puntajes = RUTA_BASE / 'puntajes.txt'
 
 """ Variables Globales """
 
@@ -89,11 +96,11 @@ def Obtener_Opcion_Menu():
 
     Opciones_Validas = ["A","B","C"]
 
-    Opcion = input("Ingrese la opción deseada: ")
+    Opcion = input("Ingrese la opción deseada: ").strip()
 
     while not Opcion.upper() in Opciones_Validas:
         print("Por favor, ingrese un número entero entre las siguientes [A,B,C].")
-        Opcion = input("Ingrese la opción deseada: ")
+        Opcion = input("Ingrese la opción deseada: ").strip()
 
     return Opcion
 
@@ -111,7 +118,7 @@ def Obtener_Preguntas_Respuestas():
 
     M_Preguntas = []
 
-    with open('preguntas_respuestas.txt', 'r', encoding='utf-8') as archivo:
+    with open(Archivo_Preguntas, 'r', encoding='utf-8') as archivo:
         
         Cuestionario = archivo.readlines()
         lista = []
@@ -219,7 +226,7 @@ def Obtener_Numero_Preguntas():
             print("B. 10 Preguntas")
             print("C. 15 Preguntas\n")
 
-            Opcion = input("Opción: ")
+            Opcion = input("Opción: ").strip()
             
             if Opcion.upper() not in ["A","B","C"]:
                 raise ValueError("Debe ingresar una opción [A,B,C]")
@@ -334,6 +341,43 @@ def Imprimir_Turno(Nombre):
     """
 
     print(f"Va el TURNO de: {Nombre}\n\n")
+
+def Imprimir_Progreso(Nombre, Puntaje, Ronda, Total_Preguntas):
+    """
+    Descripción:
+    Procedimiento que imprime la pregunta en la que se está, junto con el
+    puntaje que lleva el jugador en ese momento.
+
+    Entradas:
+    - Nombre: string
+    - Puntaje: entero
+    - Ronda: entero
+    - Total_Preguntas: entero
+
+    Salida: ninguna
+
+    """
+
+    print(f"Pregunta {Ronda} de {Total_Preguntas}  |  {Nombre}: {Puntaje} puntos\n")
+
+def Obtener_Puntaje_Jugador(Jugador):
+    """
+    Descripción:
+    Función que busca el puntaje actual del jugador en la matriz M_Jugadores.
+
+    Entradas:
+    - Jugador: string
+
+    Salidas:
+    - Puntaje del jugador (0 si no se encuentra)
+
+    """
+
+    for Puntaje, Nombre in M_Jugadores:
+        if Nombre == Jugador:
+            return Puntaje
+
+    return 0
 
 def Pregunta_Random():
 
@@ -511,17 +555,16 @@ def Empezar_Juego(N_Preguntas):
             
             Imprimir_Turno(Turno_Jugador)
 
+            Imprimir_Progreso(Turno_Jugador, Obtener_Puntaje_Jugador(Turno_Jugador), ronda, N_Preguntas)
+
             Pregunta_Actual = Pregunta_Random()
             
             Imprimir_Pregunta(Pregunta_Actual, L_Respuesta)
             
-            Respuesta = input("Ingrese su respuesta: ")
-
-            Respuesta = Respuesta.upper()
+            Respuesta = input("Ingrese su respuesta: ").strip().upper()
 
             while Respuesta not in L_Respuesta:
-                Respuesta = input("Ingrese una respuesta válida (A,B,C,D): ")
-                Respuesta = Respuesta.upper()
+                Respuesta = input("Ingrese una respuesta válida (A,B,C,D): ").strip().upper()
 
             Indice = L_Respuesta.index(Respuesta)
             
@@ -541,6 +584,39 @@ def Empezar_Juego(N_Preguntas):
         Hubo_Empate(Maximos_Puntajes)
 
     return
+
+
+def Guardar_Puntajes(Jugadores):
+
+    """
+    
+        Descripción:
+
+        Función que agrega al archivo puntajes.txt el puntaje final de cada
+        jugador de la partida recién terminada, con el formato "Puntaje,Nombre".
+
+        Entradas:
+        - Jugadores: matriz con los puntajes y nombres de los jugadores.
+
+        Salidas:
+        - Líneas agregadas al archivo puntajes.txt.
+
+    """
+
+    Contenido_Previo = ""
+
+    if Archivo_Puntajes.exists():
+        Contenido_Previo = Archivo_Puntajes.read_text(encoding='utf-8')
+
+    with open(Archivo_Puntajes, 'a', encoding='utf-8') as archivo:
+
+        if Contenido_Previo and not Contenido_Previo.endswith("\n"):
+            archivo.write("\n")
+
+        for Puntaje, Jugador in Jugadores:
+            archivo.write(f"{Puntaje},{Jugador}\n")
+
+    print(f"\nLos puntajes de esta partida se guardaron en {Archivo_Puntajes.name}\n")
 
 
 def Jugar_Trivia(): 
@@ -568,11 +644,11 @@ def Jugar_Trivia():
 
     M_Jugadores = Obtener_Jugadores()
 
-    print(M_Jugadores)
-
     Nombres_Jugadores = [Jugador for _ , Jugador in M_Jugadores]
 
     Empezar_Juego(N_Preguntas)
+
+    Guardar_Puntajes(M_Jugadores)
 
 def Imprimir_Como_Jugar():
 
